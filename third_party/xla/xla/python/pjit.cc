@@ -583,6 +583,7 @@ absl::StatusOr<nb::object> PjitFunction::Call(nb::handle callable,
       nb::object out_and_fastpath_data;
       nb::tuple out_tuple;
       VLOG(2) << "Cache miss for " << call_signature.DebugString();
+      bool remove_cache = false;
       try {
         // Calls Python and may release the GIL. May also throw if
         // compilation/tracing fails.
@@ -593,6 +594,10 @@ absl::StatusOr<nb::object> PjitFunction::Call(nb::handle callable,
         out_tuple = nb::cast<nb::tuple>(out_and_fastpath_data);
 
         PopulateCacheEntry(*cache_entry, out_tuple);
+
+        if (out_tuple.size() == 3 && out_tuple[2].is_valid()) {
+          remove_cache = nb::cast<bool>(out_tuple[2]);
+        }
       } catch (const std::exception& e) {
         VLOG(2) << "cache miss fail: " << e.what();
         cache_entry->fall_back_to_python = true;
@@ -600,6 +605,10 @@ absl::StatusOr<nb::object> PjitFunction::Call(nb::handle callable,
         throw;
       }
       cache_entry->compilation_complete.Notify();
+
+      if (remove_cache) {
+        executables_->Remove(call_signature);
+      }
 
       // We have already computed the result in the miss path so we can return
       // it. We are even *required* to do so if there are donated arguments,
@@ -737,7 +746,7 @@ absl::Status PjitFunction::ComputeCallSignature(
 
 void PjitFunction::PopulateCacheEntry(PjitCacheEntry& cache_entry,
                                       const nb::tuple& out_and_fastpath_data) {
-  DCHECK_EQ(out_and_fastpath_data.size(), 2);
+  DCHECK_GE(out_and_fastpath_data.size(), 2);
 
   if (out_and_fastpath_data[1].is_none()) {
     VLOG(2) << "fastpath_data is none";
