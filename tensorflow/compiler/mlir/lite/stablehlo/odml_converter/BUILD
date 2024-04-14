@@ -19,12 +19,13 @@ tf_cc_binary(
     name = "odml-converter",
     testonly = True,
     srcs = ["odml_converter_main.cc"],
+    compatible_with = ["//buildenv/target:non_prod"],
     visibility = [
         "//tensorflow/compiler/mlir/lite/stablehlo/odml_converter:__subpackages__",
         "//third_party/odml/infra:__subpackages__",
     ],  # Prototype phase.
     deps = [
-        ":shlo_simplify",
+        ":outline_composites",
         "//tensorflow/compiler/mlir:init_mlir",
         "//tensorflow/compiler/mlir/lite:tensorflow_lite",
         "//tensorflow/compiler/mlir/lite/stablehlo:legalize_stablehlo_to_vhlo_pass",
@@ -34,41 +35,36 @@ tf_cc_binary(
         "@llvm-project//mlir:FuncDialect",
         "@llvm-project//mlir:MlirOptLib",
         "@llvm-project//mlir:Support",
+        "@stablehlo//:chlo_ops",
         "@stablehlo//:stablehlo_ops",
     ],
 )
 
 cc_library(
-    name = "shlo_simplify",
+    name = "outline_composites",
     srcs = [
-        "transforms/shlo_simplify.cc",
+        "transforms/outline_composites.cc",
     ],
     hdrs = ["passes.h"],
+    compatible_with = ["//buildenv/target:non_prod"],
     deps = [
-        ":folders",
         ":passes_inc_gen",
+        "@llvm-project//llvm:Support",
+        "@llvm-project//mlir:BufferizationInterfaces",
+        "@llvm-project//mlir:FuncDialect",
         "@llvm-project//mlir:IR",
         "@llvm-project//mlir:Pass",
         "@llvm-project//mlir:Support",
         "@llvm-project//mlir:TransformUtils",
+        "@stablehlo//:chlo_ops",
+        "@stablehlo//:stablehlo_ops",
     ],
     alwayslink = 1,
 )
 
-cc_library(
-    name = "folders",
-    srcs = ["folders.cc"],
-    hdrs = ["folders.h"],
-    deps = [
-        "@llvm-project//llvm:Support",
-        "@llvm-project//mlir:IR",
-        "@llvm-project//mlir:Support",
-        "@stablehlo//:stablehlo_ops",
-    ],
-)
-
 gentbl_cc_library(
     name = "passes_inc_gen",
+    compatible_with = ["//buildenv/target:non_prod"],
     tbl_outs = [
         (
             [
