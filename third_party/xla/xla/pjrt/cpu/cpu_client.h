@@ -406,6 +406,14 @@ class TfrtCpuClient final : public PjRtClient {
     last_collective_launch_event_ = std::move(event);
   }
 
+  tsl::AsyncValueRef<CpuEvent> GetLastEnqueueEvent() {
+    return last_enqueue_event_;
+  }
+
+  void SetLastEnqueueEvent(tsl::AsyncValueRef<CpuEvent> event) {
+    last_enqueue_event_ = std::move(event);
+  }
+
   absl::StatusOr<const xla::PjRtTopologyDescription*> GetTopologyDescription()
       const override {
     return &topology_;
@@ -460,6 +468,11 @@ class TfrtCpuClient final : public PjRtClient {
   // Used to control whether asynchronous computation dispatch is available for
   // this client. Only applies to non-parallel computations.
   bool asynchronous_;
+
+  // Used to prevent too much parallelism: we will not enqueue next non-parallel
+  // computation until last one is done.
+  inline static thread_local tsl::AsyncValueRef<CpuEvent> last_enqueue_event_ =
+      tsl::MakeAvailableAsyncValueRef<CpuEvent>();
 };
 
 class TfrtCpuBuffer final : public AbstractTfrtCpuBuffer {
@@ -611,7 +624,8 @@ class TfrtCpuExecutable final : public PjRtLoadedExecutable {
       absl::Span<PjRtBuffer* const> argument_handles, int replica,
       int partition, const RunId& run_id, const ExecuteOptions& options,
       tsl::AsyncValueRef<CpuEvent> last_collective_launch_event,
-      bool fill_future, TfrtCpuDevice* device = nullptr);
+      tsl::AsyncValueRef<CpuEvent> last_enqueue_event, bool fill_future,
+      TfrtCpuDevice* device = nullptr);
 
   TfrtCpuClient* client_;
 

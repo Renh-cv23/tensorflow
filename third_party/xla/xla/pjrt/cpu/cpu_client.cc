@@ -1226,7 +1226,8 @@ Status TfrtCpuExecutable::CheckBufferCompatibilities(
 absl::StatusOr<PjRtLoadedExecutable::Result> TfrtCpuExecutable::ExecuteHelper(
     absl::Span<PjRtBuffer* const> argument_handles, int replica, int partition,
     const RunId& run_id, const ExecuteOptions& options,
-    tsl::AsyncValueRef<CpuEvent> last_collective_launch_event, bool fill_future,
+    tsl::AsyncValueRef<CpuEvent> last_collective_launch_event,
+    tsl::AsyncValueRef<CpuEvent> last_enqueue_event, bool fill_future,
     TfrtCpuDevice* device) {
   tsl::profiler::TraceMe traceme("TfrtCpuExecutable::ExecuteHelper");
 
@@ -1412,6 +1413,13 @@ absl::StatusOr<PjRtLoadedExecutable::Result> TfrtCpuExecutable::ExecuteHelper(
   bool is_a_collective_launch = !!last_collective_launch_event;
   if (is_a_collective_launch) {
     input_deps.push_back(std::move(last_collective_launch_event));
+  }
+
+  if (last_enqueue_event != nullptr) {
+    if (!last_enqueue_event.IsAvailable()) {
+      input_deps.push_back(std::move(last_enqueue_event));
+    }
+    client_->SetLastEnqueueEvent(execute_event.CopyRef());
   }
 
   bool execute_inline = cheap_computation_ || !client_->asynchronous_;
@@ -1688,7 +1696,7 @@ TfrtCpuExecutable::Execute(
     auto statusor = ExecuteHelper(
         argument_handles[0], replica, partition, run_id, options,
         /*last_collective_launch_event=*/tsl::AsyncValueRef<CpuEvent>(),
-        returned_futures.has_value());
+        client_->GetLastEnqueueEvent(), returned_futures.has_value());
 
     if (!statusor.ok()) {
       return std::move(statusor).status();
@@ -1723,6 +1731,7 @@ TfrtCpuExecutable::Execute(
         auto statusor =
             ExecuteHelper(argument_handles[i], replica, partition, run_id,
                           options, last_collective_launch_event.CopyRef(),
+                          /*last_enqueue_event=*/tsl::AsyncValueRef<CpuEvent>(),
                           returned_futures.has_value());
         if (statusor.ok()) {
           wrapped_results[i] = std::move(statusor->buffers);
@@ -1784,7 +1793,9 @@ TfrtCpuExecutable::ExecuteSharded(
               argument_handles, addressable_device_logical_ids_[i].replica,
               addressable_device_logical_ids_[i].partition, RunId(), options,
               /*last_collective_launch_event=*/
-              tsl::AsyncValueRef<CpuEvent>(), fill_future));
+              tsl::AsyncValueRef<CpuEvent>(),
+              /*last_enqueue_event=*/tsl::AsyncValueRef<CpuEvent>(),
+              fill_future));
       returned_future = std::move(result.future);
       return std::move(result.buffers);
     }
@@ -1822,7 +1833,8 @@ TfrtCpuExecutable::ExecutePortable(
           /*replica=*/0,
           /*partition=*/0, RunId(), options,
           /*last_collective_launch_event=*/tsl::AsyncValueRef<CpuEvent>(),
-          fill_future, tensorflow::down_cast<TfrtCpuDevice*>(device)));
+          /*last_enqueue_event=*/tsl::AsyncValueRef<CpuEvent>(), fill_future,
+          tensorflow::down_cast<TfrtCpuDevice*>(device)));
   returned_future = std::move(result.future);
   return std::move(result.buffers);
 }
