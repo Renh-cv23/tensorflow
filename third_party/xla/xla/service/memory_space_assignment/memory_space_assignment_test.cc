@@ -2996,7 +2996,7 @@ TEST_P(MemorySpaceAssignmentTest, ConditionalMultiUse) {
   TF_ASSERT_OK_AND_ASSIGN(auto module,
                           ParseAndReturnVerifiedModule(hlo_string));
   AssignMemorySpace(module.get());
-
+  std::cout << module.get()->ToString() << "\n";
   if (allocate_across_sequential_calls()) {
     // Make sure the copy1->add edge is in alternate memory. Before conditional,
     // this should be evicted to default memory and neg uses the input from
