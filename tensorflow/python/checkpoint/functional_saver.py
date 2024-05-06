@@ -267,6 +267,9 @@ class MultiDeviceSaver:
 
       # Divide tensor_dict by task.
       for checkpoint_key, tensor_slice_dict in tensor_dict.items():
+        if "_sparse_core_table_layouts" in checkpoint_key:
+          logging.info("@debug checkpoint_key: %s", checkpoint_key)
+          logging.info("@debug tensor_slice_dict: %s", type(tensor_slice_dict))
         if not isinstance(tensor_slice_dict, dict):
           # Make sure that maybe_tensor is structured as {slice_spec -> tensor}.
           tensor_slice_dict = {"": tensor_slice_dict}
@@ -275,6 +278,9 @@ class MultiDeviceSaver:
           tensor_value = None
           if not isinstance(tensor_save_spec, saveable_object.SaveSpec):
             tensor_value = tensor_save_spec
+            logging.info(
+                "@debug tensor_save_spec.device: %s", tensor_save_spec.device
+            )
             tensor_save_spec = saveable_object.SaveSpec(
                 tensor=tensor_value,
                 slice_spec=slice_spec,
