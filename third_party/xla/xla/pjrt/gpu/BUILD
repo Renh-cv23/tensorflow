@@ -43,6 +43,7 @@ cc_library(
         ":gpu_helpers",
         ":gpu_metrics",
         ":gpu_topology",
+        ":gpu_topology_proto_cc",
         "//xla:literal",
         "//xla:shape_util",
         "//xla:status",
