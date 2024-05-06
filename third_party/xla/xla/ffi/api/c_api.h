@@ -337,6 +337,25 @@ typedef XLA_FFI_Error* XLA_FFI_Handler_Register(
     XLA_FFI_Handler_Register_Args* args);
 
 //===----------------------------------------------------------------------===//
+// ExecutionContext
+//===----------------------------------------------------------------------===//
+
+struct XLA_FFI_ExecutionContext_Get_Args {
+  size_t struct_size;
+  void* priv;
+
+  XLA_FFI_ExecutionContext* ctx;
+  const char* id;  // null terminated
+  void* data;      // out
+};
+
+XLA_FFI_DEFINE_STRUCT_TRAITS(XLA_FFI_ExecutionContext_Get_Args, data);
+
+// Returns an opaque data from the execution context for a given name.
+typedef XLA_FFI_Error* XLA_FFI_ExecutionContext_Get(
+    XLA_FFI_ExecutionContext_Get_Args* args);
+
+//===----------------------------------------------------------------------===//
 // Stream
 //===----------------------------------------------------------------------===//
 
@@ -371,6 +390,7 @@ struct XLA_FFI_Api {
   _XLA_FFI_API_STRUCT_FIELD(XLA_FFI_Error_Destroy);
   _XLA_FFI_API_STRUCT_FIELD(XLA_FFI_Handler_Register);
   _XLA_FFI_API_STRUCT_FIELD(XLA_FFI_Stream_Get);
+  _XLA_FFI_API_STRUCT_FIELD(XLA_FFI_ExecutionContext_Get);
 };
 
 #undef _XLA_FFI_API_STRUCT_FIELD

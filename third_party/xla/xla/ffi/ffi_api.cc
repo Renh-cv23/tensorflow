@@ -29,6 +29,7 @@ limitations under the License.
 #include "xla/ffi/api/c_api.h"
 #include "xla/ffi/api/c_api_internal.h"  // IWYU pragma: keep
 #include "xla/ffi/call_frame.h"
+#include "xla/ffi/execution_context.h"
 #include "xla/hlo/ir/hlo_computation.h"
 #include "xla/service/service_executable_run_options.h"
 #include "xla/status.h"
@@ -44,6 +45,7 @@ struct XLA_FFI_Error {
 struct XLA_FFI_ExecutionContext {
   const xla::ServiceExecutableRunOptions* run_options;
   const xla::HloComputation* called_computation;
+  const xla::ffi::ExecutionContext* execution_context;
 };
 
 //===----------------------------------------------------------------------===//
@@ -70,7 +72,8 @@ Status TakeStatus(XLA_FFI_Error* error) {
 
 Status Call(Ffi& handler, CallFrame& call_frame, const CallOptions& options) {
   XLA_FFI_ExecutionContext ctx = {options.run_options,
-                                  options.called_computation};
+                                  options.called_computation,
+                                  options.execution_context};
   XLA_FFI_CallFrame ffi_call_frame = call_frame.Build(GetXlaFfiApi(), &ctx);
   return TakeStatus(handler.Call(&ffi_call_frame));
 }
@@ -260,6 +263,21 @@ static XLA_FFI_Error* XLA_FFI_Stream_Get(XLA_FFI_Stream_Get_Args* args) {
   return nullptr;
 }
 
+static XLA_FFI_Error* XLA_FFI_ExecutionContext_Get(
+    XLA_FFI_ExecutionContext_Get_Args* args) {
+  XLA_FFI_RETURN_IF_ERROR(ActualStructSizeIsGreaterOrEqual(
+      "XLA_FFI_ExecutionContext_Get",
+      XLA_FFI_ExecutionContext_Get_Args_STRUCT_SIZE, args->struct_size));
+
+  auto opaque = args->ctx->execution_context->Lookup(std::string(args->id));
+  if (!opaque.ok()) {
+    return new XLA_FFI_Error{std::move(opaque).status()};
+  }
+
+  args->data = (*opaque)->data();
+  return nullptr;
+}
+
 //===----------------------------------------------------------------------===//
 // XLA FFI Internal Api Implementation
 //===----------------------------------------------------------------------===//
@@ -287,6 +305,11 @@ static void* XLA_FFI_INTERNAL_CalledComputation_Get(
   return const_cast<HloComputation*>(ctx->called_computation);
 }
 
+static void* XLA_FFI_INTERNAL_ExecutionContext_Get(
+    XLA_FFI_ExecutionContext* ctx) {
+  return const_cast<ffi::ExecutionContext*>(ctx->execution_context);
+}
+
 //===----------------------------------------------------------------------===//
 // XLA FFI Api access
 //===----------------------------------------------------------------------===//
@@ -299,6 +322,7 @@ static XLA_FFI_InternalApi internal_api = {
     XLA_FFI_INTERNAL_DeviceOrdinal_Get,
     XLA_FFI_INTERNAL_DeviceMemoryAllocator_Get,
     XLA_FFI_INTERNAL_CalledComputation_Get,
+    XLA_FFI_INTERNAL_ExecutionContext_Get,
 };
 
 static XLA_FFI_Api api = {
@@ -307,11 +331,12 @@ static XLA_FFI_Api api = {
 
     &internal_api,
 
-    XLA_FFI_Error_Create,      // creates error
-    XLA_FFI_Error_GetMessage,  // get error message
-    XLA_FFI_Error_Destroy,     // frees error
-    XLA_FFI_Handler_Register,  // registers handler
-    XLA_FFI_Stream_Get,        // returns platform specific stream
+    XLA_FFI_Error_Create,          // creates error
+    XLA_FFI_Error_GetMessage,      // get error message
+    XLA_FFI_Error_Destroy,         // frees error
+    XLA_FFI_Handler_Register,      // registers handler
+    XLA_FFI_Stream_Get,            // returns platform specific stream
+    XLA_FFI_ExecutionContext_Get,  // returns execution context data
 };
 
 const XLA_FFI_Api* GetXlaFfiApi() { return &api; }

@@ -641,9 +641,8 @@ struct AttrDecoding;
 //                                      XLA_FFI_ExecutionContext* ctx);
 //   }
 //
-// TODO(ezhulenev): Add an example for decoding opaque data passed together with
-// a handler registration (not yet implemented). Today this is only used as
-// internal implementation detail of builtin FFI handlers.
+// Second template parameter is used to conditionally enable/disable context
+// decoding specialization for a given type via SFINAE.
 template <typename T>
 struct CtxDecoding;
 
