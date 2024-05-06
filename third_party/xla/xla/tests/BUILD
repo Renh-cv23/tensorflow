@@ -1,6 +1,7 @@
 # Description:
 #   Base testing infrastructure for XLA.
 
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load(
     "@local_config_rocm//rocm:build_defs.bzl",
     "if_rocm_is_configured",
@@ -2929,5 +2930,25 @@ xla_test(
         "//xla:types",
         "//xla/hlo/ir:hlo",
         "@local_tsl//tsl/platform:test",
+    ],
+)
+
+bzl_library(
+    name = "plugin_bzl",
+    srcs = ["plugin.bzl"],
+    deps = [
+        "//devtools/build_cleaner/skylark:build_defs_lib",
+    ],
+)
+
+bzl_library(
+    name = "build_defs_bzl",
+    srcs = ["build_defs.bzl"],
+    deps = [
+        ":plugin_bzl",
+        "//devtools/build_cleaner/skylark:build_defs_lib",
+        "//xla:xla_bzl",
+        "//xla/stream_executor:build_defs_bzl",
+        "@local_tsl//tsl/platform:build_config_root_bzl",
     ],
 )

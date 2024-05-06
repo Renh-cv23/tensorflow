@@ -1,3 +1,4 @@
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 load("@local_tsl//tsl/platform:build_config.bzl", "tf_proto_library")
 load("@local_tsl//tsl/platform:build_config_root.bzl", "if_static")
 load("@local_tsl//tsl/platform:rules_cc.bzl", "cc_library")
@@ -23,6 +24,18 @@ package_group(
 package_group(
     name = "internal",
     packages = stream_executor_internal(),
+)
+
+bzl_library(
+    name = "build_defs_bzl",
+    srcs = ["build_defs.bzl"],
+    deps = [
+        "//devtools/build_cleaner/skylark:build_defs_lib",
+        "//tensorflow:tensorflow_google_bzl",
+        "@local_config_cuda//cuda:build_defs_bzl",
+        "@local_tsl//tsl/platform:rules_cc_bzl",
+        "@local_tsl//tsl/platform/default:cuda_build_defs_bzl",
+    ],
 )
 
 #===--------------------------------------------------------------------------------------------===#
