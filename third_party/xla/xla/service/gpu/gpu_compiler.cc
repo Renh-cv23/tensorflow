@@ -649,8 +649,6 @@ absl::Status RunSPMDPasses(
     HloPassPipeline& spmd_simplify =
         spmd_pipeline.AddPass<HloPassFix<HloPassPipeline>>("spmd-simplify");
 
-    spmd_simplify.AddPass<AlgebraicSimplifier>(layout_insensitive_algsimp_opts);
-
     spmd_simplify.AddPass<SortSimplifier>();
     spmd_simplify.AddPass<TupleSimplifier>();
     spmd_simplify.AddPass<ScatterExpander>(
@@ -663,6 +661,13 @@ absl::Status RunSPMDPasses(
     ReshapeMoverOptions reshape_mover_options;
     reshape_mover_options.reshape_of_1d_broadcast_is_cheap = true;
     spmd_simplify.AddPass<ReshapeMover>(reshape_mover_options);
+    // Run AlgebraicSimplifier directly before HloConstantFolding, because we
+    // need to simplify DynamicSlice(Broadcast) away. Constant folding of
+    // DynamicSlice can be quite costly, as the whole operand will be evaluated.
+    // We run AlgebraicSimplifier as HloPassFix to make sure all simplifications
+    // have been done before running HloConstantFolding.
+    spmd_simplify.AddPass<HloPassFix<AlgebraicSimplifier>>(
+        layout_insensitive_algsimp_opts);
     spmd_simplify.AddPass<HloConstantFolding>();
     spmd_simplify.AddPass<ConditionalSimplifier>();
 
