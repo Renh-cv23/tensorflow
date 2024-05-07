@@ -1023,6 +1023,7 @@ cc_binary(
         ":all_passes",
         ":hlo_dialect_registration",
         ":transforms_gpu_passes",
+        "//base",
         "@llvm-project//llvm:Support",
         "@llvm-project//mlir:AllExtensions",
         "@llvm-project//mlir:AllPassesAndDialects",

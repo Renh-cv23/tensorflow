@@ -1295,7 +1295,6 @@ def MHLO_AsyncUpdateOp : MHLO_Op<"async_update", [DeclareOpInterfaceMethods<Infe
 
   let arguments = (ins
     MHLO_AsyncBundle:$bundle,
-    FlatSymbolRefAttr:$called_computation,
     StrAttr:$execution_thread
     );
 
@@ -1319,7 +1318,6 @@ def MHLO_AsyncDoneOp : MHLO_Op<"async_done", [DeclareOpInterfaceMethods<InferTyp
 
   let arguments = (ins
     MHLO_AsyncBundle:$bundle,
-    FlatSymbolRefAttr:$called_computation,
     StrAttr:$execution_thread
     );
 

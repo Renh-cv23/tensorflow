@@ -13,6 +13,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include "base/init_google.h"
 #include "deallocation/transforms/passes.h"
 #include "mhlo/IR/register.h"
 #include "mhlo/transforms/passes.h"
@@ -27,6 +28,9 @@ limitations under the License.
 using namespace mlir;
 
 int main(int argc, char** argv) {
+  int one = 1;
+  ::InitGoogle("foo", &one, &argv, false);
+
   registerAllPasses();
   deallocation::registerDeallocationPasses();
   hlo::registerLMHLOTransformsPasses();
