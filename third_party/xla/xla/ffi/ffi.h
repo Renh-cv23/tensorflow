@@ -53,10 +53,12 @@ struct CalledComputation {};  // binds `HloComputation*`
 // Arguments
 //===----------------------------------------------------------------------===//
 
+using BufferShape = absl::Span<const int64_t>;
+
 struct BufferBase {
   PrimitiveType dtype;
   se::DeviceMemoryBase data;
-  absl::Span<const int64_t> dimensions;
+  BufferShape dimensions;
 };
 
 namespace internal {
@@ -71,7 +73,7 @@ using NativeType = typename primitive_util::PrimitiveTypeToNative<dtype>::type;
 template <PrimitiveType dtype, size_t rank = internal::kDynamicRank>
 struct Buffer {
   se::DeviceMemory<internal::NativeType<dtype>> data;
-  absl::Span<const int64_t> dimensions;
+  BufferShape dimensions;
 };
 
 // clang-format off
