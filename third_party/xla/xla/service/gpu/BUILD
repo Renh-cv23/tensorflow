@@ -3439,7 +3439,7 @@ cc_library(
         ":instruction_fusion",
         ":ir_emission_utils",
         ":ir_emitter",
-        ":loop_double_buffer_transformer",
+        ":double_buffer_loop_unrolling",
         ":matmul_utils",
         ":metrics",
         ":move_copy_to_users",
@@ -5823,12 +5823,11 @@ xla_cc_test(
 )
 
 cc_library(
-    name = "loop_double_buffer_transformer",
-    srcs = ["loop_double_buffer_transformer.cc"],
-    hdrs = ["loop_double_buffer_transformer.h"],
+    name = "double_buffer_loop_unrolling",
+    srcs = ["double_buffer_loop_unrolling.cc"],
+    hdrs = ["double_buffer_loop_unrolling.h"],
     deps = [
         "//xla:status",
-        "//xla:statusor",
         "//xla:util",
         "//xla:xla_data_proto_cc",
         "//xla/hlo/ir:hlo",
@@ -5850,10 +5849,10 @@ cc_library(
 )
 
 xla_cc_test(
-    name = "loop_double_buffer_transformer_test",
-    srcs = ["loop_double_buffer_transformer_test.cc"],
+    name = "double_buffer_loop_unrolling_test",
+    srcs = ["double_buffer_loop_unrolling_test.cc"],
     deps = [
-        ":loop_double_buffer_transformer",
+        ":double_buffer_loop_unrolling",
         "//xla:test",
         "//xla:xla_data_proto_cc",
         "//xla:xla_proto_cc",
